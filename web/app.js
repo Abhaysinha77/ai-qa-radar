@@ -497,21 +497,30 @@ function renderMore() {
     + `<button class="btn" data-setting="clear-read">Clear read history</button><button class="btn" data-setting="export">Export my data</button>`
     + `<label class="btn">Import<input type="file" accept="application/json" data-setting="import" hidden></label>`
     + sec("🧠 Summaries")
-    + `<p class="hint">${data.summaries === "ai" ? "AI summaries are on (they only use facts from the article)." : "Summaries are <b>quoted</b> from each article — the most informative sentences, key points per section and the outline — so nothing is invented. Add an ANTHROPIC_API_KEY (or OpenAI) secret in GitHub for rewritten plain-English summaries."}</p>`
+    + `<p class="hint">Every card has <b>In short</b> and <b>The full story</b> — the whole article, section by section. ${data.summaries === "ai" ? "Many are written in plain English by AI from the article's text only (free GitHub Models); the rest are quoted word for word." : "They are <b>quoted</b> word for word from each article, so nothing is invented. Free AI rewrites (GitHub Models) switch on by themselves when your GitHub account has access."}</p>`
     + sec("📡 Sources", `${ok}/${data.sources.length} working`)
     + `<p class="hint">Collected ${esc(ago(data.generated))}. Live Hacker News: ${esc(liveState)}.</p>`
     + `<table><thead><tr><th>Source</th><th>Items</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 // ---------------------------------------------------------------- reader
+// "The full story": the whole article, section by section (quoted, or AI-written from its text)
+function storyHtml(story) {
+  return (Array.isArray(story) ? story : []).filter((sec) => sec && Array.isArray(sec.paras) && sec.paras.length).map((sec) =>
+    `<section>${sec.heading ? `<h5>${esc(sec.heading)}</h5>` : ""}${sec.list
+      ? `<ul>${sec.paras.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`
+      : sec.paras.map((p) => `<p>${esc(p)}</p>`).join("")}</section>`).join("");
+}
 function readerHtml(it) {
   const [, q] = qOf(it);
   const kindLabel = { ai: "AI summary — written only from the article's facts", extractive: "Quoted summary — the article's own most informative sentences, in order", excerpt: "Excerpt from the article" }[it.summary_kind] || "";
+  // (the full story below is what lets you understand the whole piece without opening it)
   const figures = (it.images || []).filter((im) => imgUrl(im.src)).map((im) =>
     `<figure><a href="${esc(im.src)}" target="_blank" rel="noopener"><img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy" referrerpolicy="no-referrer"></a><figcaption>${esc(im.alt)} · from the article</figcaption></figure>`).join("");
   const terms = glossFor(it.terms);
   const courses = coursesFor(it.tags).slice(0, 4);
   const points = (it.key_points || []).map((k) => `<li>${k.heading ? `<b>${esc(k.heading)}</b>` : ""}${esc(k.point)}</li>`).join("");
+  const story = storyHtml(it.story);
   return `<div class="reader-head"><button class="icon-btn" data-act="close-reader" aria-label="Close">✕</button>
       <div class="grow">${esc(it.source)}${it.read_minutes ? ` · ${esc(it.read_minutes)} min article` : ""}</div>
       <button class="icon-btn" data-act="save" data-key="${esc(it.key)}" aria-pressed="${!!prefs.saved[it.key]}" aria-label="Save">${prefs.saved[it.key] ? "★" : "☆"}</button></div>
@@ -521,11 +530,14 @@ function readerHtml(it) {
       <div class="meters"><div class="meter u">Urgency <b>${esc(it.urgency ?? 0)}</b><div class="bar"><i class="${lvl(it.urgency)}"></i></div></div>
         <div class="meter">Importance <b>${esc(it.importance ?? 0)}</b><div class="bar"><i class="${lvl(it.importance)}"></i></div></div></div>
       ${imgUrl(it.cover) && !figures ? `<img class="cover" src="${esc(it.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}
-      <h4>Summary <span class="prov">${esc(provenance(it)[0])}</span></h4>
+      <h4>In short <span class="prov">${esc(provenance(it)[0])}</span></h4>
       ${it.summary ? `<p class="lead">${esc(it.summary)}</p><div class="kind">ⓘ ${esc(kindLabel)}</div>` : `<p class="notice">${esc(it.no_text_reason || (it.group === LIVE_GROUP ? "Live from Hacker News — the full briefing arrives with the next update (within 30 minutes)." : "No summary yet — the full briefing is added on the next update."))}</p>`}
-      ${points ? `<h4>Key points, section by section</h4><ol class="points">${points}</ol>` : ""}
+      ${story ? `<h4>The full story <span class="prov">${it.summary_kind === "ai" ? "AI" : "Quoted"}</span></h4>
+        <div class="story">${story}</div>
+        <div class="kind">ⓘ ${it.summary_kind === "ai" ? "Written by AI from the article's own text, start to end — check the original before acting on it." : "Every sentence is quoted word for word from the article, in order, covering each paragraph."}</div>`
+        : points ? `<h4>Key points, section by section</h4><ol class="points">${points}</ol>` : ""}
       ${(it.discussion || []).length ? `<h4>From the discussion <span class="prov">Quoted</span></h4>${it.discussion.map((q) => `<blockquote class="quote">${esc(q)}</blockquote>`).join("")}<p class="lbl">Comments from Hacker News readers — opinions, not facts.</p>` : ""}
-      ${(it.outline || []).length ? `<h4>What the article covers</h4><div class="outline">${it.outline.map((h) => `<span>${esc(h)}</span>`).join("")}</div>` : ""}
+      ${!story && (it.outline || []).length ? `<h4>What the article covers</h4><div class="outline">${it.outline.map((h) => `<span>${esc(h)}</span>`).join("")}</div>` : ""}
       ${figures ? `<section class="figs"><h4>Diagrams & architecture from the article</h4>${figures}</section>` : ""}
       ${terms.length ? `<h4>Terms explained</h4><div class="grid one">${terms.map((g) => `<div class="term"><h3>${esc(g.term)}</h3><p>${esc(g.def)}</p></div>`).join("")}</div>` : ""}
       ${courses.length ? `<h4>Learn this for free</h4><div class="grid one">${courses.map((c) => `<div class="res"><span class="kind">${esc(c.provider)} · ${esc(c.cert)}</span><a class="t" href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener">${esc(c.title)}</a></div>`).join("")}</div>` : ""}

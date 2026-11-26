@@ -55,14 +55,19 @@ ai-qa-radar/
 
 ## What's new in v2
 
-- **New design:** modern dark/light look (◐ switches theme), built for every screen — bottom tabs on
-  phones, chip navigation on tablets, sidebar + "Trending / Learn next" rail on desktops.
-- **Reader view** (tap *Read summary*): the summary, **key points section by section**, what the
-  article covers (its outline), **diagrams/architecture images found in the article**, the terms
-  explained in plain English, and free courses for that topic.
-- **Accurate long summaries without AI:** sentences are *quoted* from the article (most informative
-  ones, in order) plus one key point per section — nothing is rewritten, so nothing can be wrong.
-  Add an AI key later for rewritten summaries (up to 400 words, facts from the article only).
+- **Design:** dark/light (◐), a sticky top navigation bar on desktop and tablet, bottom tabs on
+  phones, and a "Trending / Learn next" rail on wide screens.
+- **Cards:** a short summary plus up to 3 key points, and a **Full briefing** button.
+- **Full briefing:** *In short* (the gist), then **The full story** — the whole article, section by
+  section, so you understand it without opening it — plus quoted Hacker News discussion, diagrams found in
+  the article, terms explained, free courses, and *Why it's ranked here*.
+- **Free AI summaries (GitHub Models):** the workflow asks GitHub Models (with its own token — nothing
+  to buy) to write the full story in plain English, using only facts from the article. The free tier is
+  rate-limited, so it does at most 12 per run / 120 per day (`AI_PER_RUN`, `AI_PER_DAY` in
+  `digest/config.py`). Turn it off with the repository variable `GITHUB_MODELS = 0`.
+- **Without AI it still works:** the full story is *quoted* — about one sentence in three from every
+  paragraph, in order (short articles are kept whole) — so nothing is invented. Release notes become
+  "Features / Bug fixes" bullets.
 - **Trends & terms:** new and rising terms/tools/models this week (e.g. "A2A", "GPT-6.2") and a
   glossary of 40+ important concepts in plain English.
 - **Library:** 30+ hand-picked free resources (official docs, blogs, newsletters, podcasts,

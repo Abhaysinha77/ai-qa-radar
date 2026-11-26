@@ -67,6 +67,49 @@ def _dedupe(sents: list[str]) -> list[str]:
     return out
 
 
+def full_story(sections: list[dict], title: str = "", max_words: int = 550, changelog: bool | None = None) -> list[dict]:
+    """The whole article, condensed: the best sentences of EVERY paragraph (about one in three),
+    quoted word for word, kept in order and grouped under the article's own headings. If that
+    is too long, the least informative picks are dropped until it fits."""
+    if (changelog is None and _is_changelog(sections)) or (changelog and any(s.get("bullets") for s in sections)):
+        return [{"heading": sec["heading"] or "Changes", "paras": sec["bullets"][:12], "list": True}
+                for sec in sections if sec.get("bullets")]
+    all_sents = _dedupe([s for sec in sections for p in sec["paras"] for s in sentences(p)])
+    if not all_sents:
+        return []
+    scores = _rank(all_sents, title)
+    index = {s: i for i, s in enumerate(all_sents)}
+    short = sum(len(x.split()) for x in all_sents) <= max_words
+    picks, taken = [], set()          # (section, paragraph, sentence index)
+    for si, sec in enumerate(sections):
+        for pi, para in enumerate(sec["paras"]):
+            cands = [s for s in sentences(para) if s in index and index[s] not in taken]
+            # short articles are kept whole; longer ones keep about one sentence in three per paragraph
+            k = len(cands) if short else max(1, round(len(cands) / 3))
+            for s in sorted(cands, key=lambda x: -scores[index[x]])[:k]:
+                picks.append((si, pi, index[s]))
+                taken.add(index[s])
+    def words():
+        return sum(len(all_sents[i].split()) for _, _, i in picks)
+    while len(picks) > 1 and words() > max_words:
+        picks.remove(min(picks, key=lambda x: scores[x[2]]))
+    story: list[dict] = []
+    last = None
+    for si, pi, i in sorted(picks):
+        heading = sections[si]["heading"]
+        if not story or story[-1]["heading"] != heading or story[-1].get("_sec") != si:
+            story.append({"heading": heading, "paras": [], "_sec": si})
+            last = None
+        if last == pi:
+            story[-1]["paras"][-1] += " " + all_sents[i]
+        else:
+            story[-1]["paras"].append(all_sents[i])
+        last = pi
+    for sec in story:
+        sec.pop("_sec", None)
+    return story
+
+
 def _changelog(sections: list[dict]) -> dict:
     """Release notes: bullets grouped by their heading ("Features", "Bug Fixes"...), quoted as-is."""
     groups = [(sec["heading"] or "Changes", sec["bullets"]) for sec in sections if sec.get("bullets")]
@@ -86,6 +129,10 @@ def _changelog(sections: list[dict]) -> dict:
             "outline": [h for h, _ in groups if h != "Changes"][:12]}
 
 
+def _is_changelog(sections: list[dict]) -> bool:
+    return is_changelog(sections)
+
+
 def is_changelog(sections: list[dict]) -> bool:
     paras = sum(len(p.split()) for sec in sections for p in sec["paras"])
     bullets = sum(len(b.split()) for sec in sections for b in sec.get("bullets", []))
@@ -93,7 +140,7 @@ def is_changelog(sections: list[dict]) -> bool:
     return count >= 3 and paras and bullets >= 0.6 * paras
 
 
-def summarize(sections: list[dict], title: str = "", max_words: int = 250, changelog: bool | None = None) -> dict:
+def summarize(sections: list[dict], title: str = "", max_words: int = 140, changelog: bool | None = None) -> dict:
     if (changelog is None and is_changelog(sections)) or (changelog and any(sec.get("bullets") for sec in sections)):
         return _changelog(sections)
     all_sents: list[str] = _dedupe([s for sec in sections for p in sec["paras"] for s in sentences(p)])

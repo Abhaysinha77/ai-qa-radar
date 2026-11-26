@@ -17,7 +17,13 @@ USER_AGENT = "ai-qa-digest/1.0 (personal reader)"
 ANTHROPIC_MODEL = "claude-haiku-5-5"   # override with the ANTHROPIC_MODEL env var
 MAX_SUMMARIES_PER_RUN = 80             # cost guard
 BACKFILL_PER_RUN = 25                  # re-read older stories that predate the full reader
-READER_VERSION = 2                     # bump when the reader improves: older summaries are redone (a few per run)
+READER_VERSION = 3                     # bump when the reader improves: older summaries are redone (a few per run)
+STORY_MAX_WORDS = 600                  # "The full story": quoted, section by section, covers every paragraph
+# Free AI summaries inside GitHub Actions (GitHub Models, uses the workflow's own GITHUB_TOKEN, no key to buy).
+# The free tier is rate-limited, so we spend it carefully and fall back to quoted summaries when it runs out.
+GITHUB_MODELS_MODEL = "openai/gpt-4.1-mini"   # override with the GITHUB_MODELS_MODEL variable
+AI_PER_RUN = 12                        # at most this many AI summaries per 30-minute run
+AI_PER_DAY = 120                       # ...and per day (stored in state, resets at midnight)
 
 # ---------------------------------------------------------------- releases
 # (display name, feed url, regex of titles to skip)

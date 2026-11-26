@@ -376,3 +376,21 @@ test("cards show a detailed summary: up to 3 new key points (escaped) and a Full
   assert.ok(!html.includes("<script>x") && html.includes("&lt;i&gt;Setup&lt;/i&gt;"));
   assert.ok(html.includes("clamp4"));
 });
+
+test("reader shows 'In short' plus the full story (escaped), bullets for release notes, AI label when AI wrote it", async () => {
+  const quoted = makeItem(1, { summary: "Short version.", summary_kind: "extractive",
+    key_points: [{ heading: "Setup", point: "Install the plugin." }], outline: ["Setup"],
+    story: [{ heading: "", paras: ["Intro paragraph."] }, { heading: "<b>Setup</b>", paras: ["Install <script>x</script> first.", "Then run it."] },
+      { heading: "Features", paras: ["api: add X"], list: true }, { heading: "Empty", paras: [] }, null] });
+  const { t } = await boot({ data: makeData([quoted]) });
+  const html = t.readerHtml(quoted);
+  assert.ok(html.includes("In short") && html.includes("The full story") && html.includes("Intro paragraph."));
+  assert.ok(html.includes("<h5>&lt;b&gt;Setup&lt;/b&gt;</h5>") && !html.includes("<script>x"));
+  assert.ok(html.includes("<ul><li>api: add X</li></ul>") && !html.includes("<h5>Empty</h5>"));
+  assert.ok(html.includes("quoted word for word") && !html.includes("Key points, section by section"));
+  assert.ok(!html.includes("What the article covers"));          // the story already has the headings
+  const ai = { ...quoted, summary_kind: "ai" };
+  assert.ok(t.readerHtml(ai).includes("Written by AI"));
+  const old = makeItem(2, { summary: "Old.", summary_kind: "extractive", key_points: [{ heading: "A", point: "Point." }] });
+  assert.ok(t.readerHtml(old).includes("Key points, section by section"));   // older stories still show key points
+});

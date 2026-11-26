@@ -230,3 +230,116 @@ def test_older_reader_versions_are_redone_once(tmp_path):
         build(tmp_path / "site", state_path, now=datetime(2026, 11, 26, 6, tzinfo=timezone.utc), groups=[], status=[])
     item = json.loads((tmp_path / "site" / "data.json").read_text())["items"][0]
     assert "104 days" in item["summary"] and item["reader_v"] == config.READER_VERSION
+
+
+# ------------------------------------------------------------------ the full story
+def _long_article(paragraphs=12):
+    body = "".join(
+        f"<h2>Part {i}</h2><p>Section {i} explains detail number {i} of the new pytest harness in depth. "
+        f"The team measured result {i * 7} percent on the agent benchmark for this part. "
+        f"Engineers then compared run {i} against the old Selenium suite carefully. "
+        f"They wrote down every flaky failure found during part {i} of the study.</p>" for i in range(1, paragraphs + 1))
+    return f"<html><body><article><h1>Harness</h1><p>This long report describes how a QA team rebuilt its pytest harness for AI agents.</p>{body}</article></body></html>"
+
+
+def test_full_story_covers_every_section_quoted_in_order_and_capped():
+    from digest.extractive import full_story
+    html = _long_article(20)
+    got = parse(html, "https://e/a")
+    story = full_story(got["sections"], "pytest harness for AI agents", max_words=600)
+    words = sum(len(p.split()) for s in story for p in s["paras"])
+    assert words <= 600
+    headings = [s["heading"] for s in story if s["heading"]]
+    assert headings == sorted(headings, key=lambda h: int(h.split()[1]))          # article order kept
+    assert len(headings) >= 15                                                      # nearly every section is covered
+    for s in story:
+        for p in s["paras"]:
+            assert p in got["text"] or all(x in got["text"] for x in p.split(". "))  # quoted, nothing invented
+
+
+def test_short_article_story_keeps_every_sentence():
+    item = Item(key="hn:1", title="How we test our MCP server with pytest", url="https://blog.example/post", source="Blog")
+    summarise(item, get_html=lambda i: [ARTICLE])
+    text = " ".join(p for s in item.story for p in s["paras"])
+    assert "300 recorded sessions" in text and "prompt injection bug" in text and "twice a week" in text
+    assert [s["heading"] for s in item.story][1:] == ["Why classic tests were not enough", "The harness", "Results"]
+
+
+def test_release_story_is_grouped_bullets():
+    item = Item(key="rel:SDK:v2", title="SDK v2", url="https://github.com/x/y/releases/tag/v2", source="SDK")
+    summarise(item, get_html=lambda i: [RELEASE])
+    assert item.story[0] == {"heading": "Features", "paras": ["api: add an error code to Message Batches creation",
+                                                             "api: add External Storage to the Admin API beta"], "list": True}
+
+
+def test_ai_json_answer_becomes_tldr_and_full_story():
+    answer = ('```json\n{"tldr": "A team tested its MCP server with recorded agent sessions.", "sections": ['
+              '{"heading": "The problem", "text": "Agents called tools in unexpected orders."},'
+              '{"heading": "The fix", "text": "A pytest plugin replays 300 sessions."}],'
+              '"qa_angle": "Replay tests removed flaky failures."}\n```')
+    item = Item(key="hn:2", title="T", url="https://blog.example/post", source="Blog")
+    summarise(item, ask=lambda p: answer, get_html=lambda i: [ARTICLE])
+    assert item.summary_kind == "ai" and item.summary.startswith("A team tested")
+    assert [s["heading"] for s in item.story] == ["The problem", "The fix", "Why it matters for QA"]
+    assert item.key_points  # quoted key points are still kept for the card
+
+
+def test_bad_ai_json_falls_back_to_quoted_story():
+    item = Item(key="hn:3", title="T", url="https://blog.example/post", source="Blog")
+    summarise(item, ask=lambda p: '{"tldr": ""}', get_html=lambda i: [ARTICLE])
+    assert item.summary_kind == "extractive" and item.story
+
+
+def test_parse_ai_rejects_junk():
+    from digest.summarize import parse_ai
+    assert parse_ai("") is None and parse_ai("not json") is None and parse_ai("{broken") is None
+    assert parse_ai('{"tldr": "x", "sections": []}') is None
+
+
+def test_budget_limits_calls_and_stops_after_a_refusal():
+    from digest.summarize import Budget, BudgetExhausted
+    calls = []
+    b = Budget(lambda p: calls.append(p) or "ok", 2)
+    assert b("a") == "ok" and b("b") == "ok"
+    try:
+        b("c"); assert False
+    except BudgetExhausted:
+        pass
+    assert len(calls) == 2 and b.used == 2
+
+    def refuse(p):
+        raise BudgetExhausted("429")
+    r = Budget(refuse, 5)
+    for _ in range(3):
+        try:
+            r("x")
+        except BudgetExhausted:
+            pass
+    assert r.used == 1 and r.stopped        # after the first "no", no more calls this run
+
+
+def test_free_ai_daily_budget_is_tracked_and_falls_back(tmp_path, monkeypatch=None):
+    import os
+    from unittest import mock
+    from digest import summarize as summ
+    from digest.dedupe import State
+    calls = []
+
+    def fake_github(prompt):
+        calls.append(1)
+        if len(calls) > 1:
+            raise summ.BudgetExhausted("429")
+        return '{"tldr": "AI wrote this.", "sections": [{"heading": "What", "text": "Details."}], "qa_angle": "QA."}'
+    items = [Item(key=f"hn:{n}", title=f"How we test our MCP server with pytest {n}", url=f"https://e/{n}",
+                  source="HN", points=100 - n, html=ARTICLE) for n in range(4)]
+    env = {"GITHUB_MODELS": "1", "GITHUB_TOKEN": "t"}
+    with mock.patch.dict(os.environ, env, clear=False), mock.patch.dict(summ.ASKERS, {"github": fake_github}):
+        for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY"):
+            os.environ.pop(k, None)
+        build(tmp_path / "site", tmp_path / "seen.json", now=datetime(2026, 11, 26, 6, tzinfo=timezone.utc),
+              groups=[("Topic · MCP", items)], status=[], offline=True)
+    data = json.loads((tmp_path / "site" / "data.json").read_text())
+    kinds = sorted(i["summary_kind"] for i in data["items"])
+    assert kinds.count("ai") == 1 and kinds.count("extractive") == 3 and data["summaries"] == "ai"
+    assert len(calls) == 2                                   # stopped asking after the refusal
+    assert State(tmp_path / "seen.json").meta == {"ai_day": "2026-11-26", "ai_used": 2}

@@ -23,7 +23,7 @@ from .notify import send_telegram
 from .rank import score, tags
 from .sources import (algolia_url, fetch, parse_algolia, parse_feed, parse_hf_papers,
                       parse_hn_bestcomments, parse_hn_list)
-from .summarize import _wrap, provider, summarise_all
+from .summarize import ASKERS, Budget, _wrap, provider, summarise_all
 from .trends import extract_terms, trending, update_history
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
@@ -125,6 +125,13 @@ def build(out_dir: Path, state_path: Path, now: datetime | None = None,
     for d in state.items.values():
         if d.get("first_seen") == today.isoformat():
             shown_today[d.get("group", "")] = shown_today.get(d.get("group", ""), 0) + 1
+    # free AI summaries are rate-limited: spend at most AI_PER_RUN per run and AI_PER_DAY per day
+    budget = None
+    if ask is None and provider():
+        if state.meta.get("ai_day") != today.isoformat():
+            state.meta.update(ai_day=today.isoformat(), ai_used=0)
+        budget = Budget(ASKERS[provider()], min(config.AI_PER_RUN, config.AI_PER_DAY - state.meta.get("ai_used", 0)))
+        ask = budget
     chosen: list[Item] = []
     for group, group_items in fresh.items():
         group_items.sort(key=lambda x: x.points or 0, reverse=True)
@@ -148,6 +155,8 @@ def build(out_dir: Path, state_path: Path, now: datetime | None = None,
                       get_html=(lambda i: [i.html or _wrap(i.body)]) if offline else None)
         for i in backlog:
             i.enriched, i.reader_v = True, config.READER_VERSION
+    if budget is not None:
+        state.meta["ai_used"] = state.meta.get("ai_used", 0) + budget.used
     for item in page_items:  # re-score every run: votes and age change
         item.tags = tags(item)
         points_text = " ".join(k.get("point", "") for k in item.key_points)
@@ -163,7 +172,7 @@ def build(out_dir: Path, state_path: Path, now: datetime | None = None,
     data = {
         "generated": now.isoformat(timespec="minutes"),
         "today": today.isoformat(),
-        "summaries": "ai" if (provider() or ask) else "extractive",
+        "summaries": "ai" if any(i.summary_kind == "ai" for i in page_items) else "extractive",
         "groups": group_order(),
         "tags": config.TAGS,
         "tag_exclude": config.TAG_EXCLUDE,

@@ -27,6 +27,7 @@ class Item:
     summary: str = ""             # summary shown on the page
     summary_kind: str = ""        # "ai", "extractive" (quoted sentences) or "excerpt"
     key_points: list[dict] = field(default_factory=list)   # [{"heading", "point"}] quoted
+    story: list[dict] = field(default_factory=list)        # the full story: [{"heading", "paras", "list"?}]
     outline: list[str] = field(default_factory=list)       # the article's section headings
     images: list[dict] = field(default_factory=list)       # diagrams found in the article
     cover: str = ""               # the article's own preview image (og:image)

@@ -11,6 +11,7 @@ permissions:
   contents: write   # save state to the `data` branch
   pages: write
   id-token: write
+  models: read      # free AI summaries via GitHub Models (rate-limited; falls back to quoted summaries)
 
 concurrency:
   group: radar
@@ -57,6 +58,12 @@ jobs:
 
       - name: Collect, rank, summarise, build app
         run: python -m digest --out site --state state/seen.json
+        env:
+          # Free AI summaries with GitHub Models, using this workflow's own token (no key to buy).
+          # Set only for this step so tests never call it. Turn off with the repository variable GITHUB_MODELS = 0.
+          GITHUB_MODELS: ${{ vars.GITHUB_MODELS || '1' }}
+          GITHUB_MODELS_MODEL: ${{ vars.GITHUB_MODELS_MODEL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Save memory (single commit, force-pushed — no history growth; also keeps the schedule alive)
         run: |

@@ -94,6 +94,7 @@ class State:
         self.seen: dict[str, str] = data.get("seen", {}) or {}
         self.items: dict[str, dict] = data.get("items", {}) or {}
         self.term_history: dict[str, dict] = data.get("term_history", {}) or {}
+        self.meta: dict = data.get("meta", {}) or {}     # e.g. today's AI-summary budget
 
     def _lookup(self, item: Item) -> tuple[str | None, Item | None]:
         """Earliest date this story was shown before (by key, URL or near-identical title)."""
@@ -142,5 +143,6 @@ class State:
         commit counts as repository activity and stops GitHub from switching off the
         schedule after 60 quiet days."""
         atomic_write(self.path, json.dumps({"last_build": last_build, "seen": self.seen,
-                                            "items": self.items, "term_history": self.term_history},
+                                            "items": self.items, "term_history": self.term_history,
+                                            "meta": self.meta},
                                            indent=1, sort_keys=True))

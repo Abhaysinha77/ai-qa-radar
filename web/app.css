@@ -58,7 +58,7 @@ body.lock{overflow:hidden}
 .topbar{position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top);
   background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:saturate(1.5) blur(16px);
   -webkit-backdrop-filter:saturate(1.5) blur(16px);border-bottom:1px solid var(--line)}
-.bar{max-width:var(--wrap);margin:0 auto;padding:0 16px;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;min-height:60px}
+.topbar-in{max-width:var(--wrap);margin:0 auto;padding:0 16px;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;min-height:60px}
 .brand{display:flex;align-items:center;gap:9px;color:var(--text);font-weight:750;font-size:17px;letter-spacing:-.03em;white-space:nowrap;flex:none;margin-right:6px}
 .brand:hover{text-decoration:none}
 .brand img{border-radius:9px}
@@ -98,7 +98,7 @@ main{padding:8px 0 32px;outline:none}
 
 /* tablet + small laptops: the section links sit in a second row of the bar */
 @media (min-width:700px){
-  .bar,.app{padding:0 24px}
+  .topbar-in,.app{padding:0 24px}
   .topnav{display:flex;order:10;flex-basis:100%;overflow-x:auto;scrollbar-width:none;margin:0 -11px}
   .topnav::-webkit-scrollbar{display:none}
   .tabs{display:none}
@@ -107,7 +107,7 @@ main{padding:8px 0 32px;outline:none}
 }
 /* desktop: everything in one row */
 @media (min-width:1360px){
-  .bar{padding:0 32px;min-height:64px;column-gap:12px}
+  .topbar-in{padding:0 32px;min-height:64px;column-gap:12px}
   .app{padding:0 32px}
   .topnav{order:0;flex:0 1 auto;flex-basis:auto;margin:0;align-self:stretch}
   .topnav button{height:64px}
@@ -489,7 +489,7 @@ h4 .prov{margin-left:8px;vertical-align:middle}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 /* small phones / very large text: search gets its own row, titles may use 3 lines */
 @media (max-width:420px){
-  .bar{padding-bottom:10px}
+  .topbar-in{padding-bottom:10px}
   .search-wrap{order:5;flex-basis:100%;margin-top:2px}
   .brand{margin-right:auto}
   .card.row .t{-webkit-line-clamp:3}
@@ -523,3 +523,12 @@ h4 .prov{margin-left:8px;vertical-align:middle}
 @media (pointer:coarse){.brief-btn{height:44px}}
 @media (min-width:1360px){.grid.big{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .rail .term{background:color-mix(in srgb,var(--card) 70%,transparent)}
+
+/* the full story (reader) */
+.story{display:flex;flex-direction:column;gap:4px}
+.story section{padding:2px 0 10px}
+.story section+section{border-top:1px dashed var(--line);padding-top:12px}
+.story h5{margin:0 0 6px;font-size:.95rem;font-weight:700;letter-spacing:-.01em;color:var(--text)}
+.story p{margin:0 0 10px;font-size:1rem;line-height:1.72;color:color-mix(in srgb,var(--text) 90%,var(--muted))}
+.story ul{margin:0 0 6px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.story li{font-size:.95rem;line-height:1.6}
