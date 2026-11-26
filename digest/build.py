@@ -140,12 +140,14 @@ def build(out_dir: Path, state_path: Path, now: datetime | None = None,
     page_items = state.recent(today, config.ARCHIVE_DAYS)
     # backfill: stories collected before the full reader existed get key points, outline,
     # diagrams and discussion highlights (a few per run, each only once)
-    backlog = [i for i in page_items if not i.enriched and i.summary_kind != "ai"][:config.BACKFILL_PER_RUN]
+    # (and stories read by an older reader version are redone once, so fixes reach old cards)
+    backlog = [i for i in page_items if i.summary_kind != "ai"
+               and (not i.enriched or i.reader_v < config.READER_VERSION)][:config.BACKFILL_PER_RUN]
     if backlog:
         summarise_all(backlog, len(backlog), ask=ask, force=True,
                       get_html=(lambda i: [i.html or _wrap(i.body)]) if offline else None)
         for i in backlog:
-            i.enriched = True
+            i.enriched, i.reader_v = True, config.READER_VERSION
     for item in page_items:  # re-score every run: votes and age change
         item.tags = tags(item)
         points_text = " ".join(k.get("point", "") for k in item.key_points)

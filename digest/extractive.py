@@ -67,7 +67,35 @@ def _dedupe(sents: list[str]) -> list[str]:
     return out
 
 
-def summarize(sections: list[dict], title: str = "", max_words: int = 250) -> dict:
+def _changelog(sections: list[dict]) -> dict:
+    """Release notes: bullets grouped by their heading ("Features", "Bug Fixes"...), quoted as-is."""
+    groups = [(sec["heading"] or "Changes", sec["bullets"]) for sec in sections if sec.get("bullets")]
+    parts, words = [], 0
+    for heading, bullets in groups:
+        take = []
+        for b in bullets[:4]:
+            n = len(b.split())
+            if words + n > 140 and (take or parts):
+                break
+            take.append(b.rstrip("."))
+            words += n
+        if take:
+            parts.append(f"{heading}: " + "; ".join(take) + ".")
+    key_points = [{"heading": h, "point": b} for h, bs in groups for b in bs][:10]
+    return {"summary": " ".join(parts), "key_points": key_points,
+            "outline": [h for h, _ in groups if h != "Changes"][:12]}
+
+
+def is_changelog(sections: list[dict]) -> bool:
+    paras = sum(len(p.split()) for sec in sections for p in sec["paras"])
+    bullets = sum(len(b.split()) for sec in sections for b in sec.get("bullets", []))
+    count = sum(len(sec.get("bullets", [])) for sec in sections)
+    return count >= 3 and paras and bullets >= 0.6 * paras
+
+
+def summarize(sections: list[dict], title: str = "", max_words: int = 250, changelog: bool | None = None) -> dict:
+    if (changelog is None and is_changelog(sections)) or (changelog and any(sec.get("bullets") for sec in sections)):
+        return _changelog(sections)
     all_sents: list[str] = _dedupe([s for sec in sections for p in sec["paras"] for s in sentences(p)])
     if not all_sents:
         return {"summary": "", "key_points": [], "outline": []}

@@ -54,5 +54,5 @@ Live about 3 minutes later. Undo a bad change: `git checkout -- <file>` before p
 ## After changing app.css or app.js
 
 Bump the version number so phones and browsers load the new files instead of an old saved copy:
-in `web/index.html` change `app.css?v=7` and `app.js?v=7` to `v=8` (and the same two names in `web/sw.js`),
-and change `const CACHE = "kairoq-v7"` in `web/sw.js` to `kairoq-v8`.
+in `web/index.html` raise the number in `app.css?v=8` and `app.js?v=8` by one (e.g. to `v=9`) (and the same two names in `web/sw.js`),
+and raise `const CACHE = "kairoq-v8"` in `web/sw.js` the same way.

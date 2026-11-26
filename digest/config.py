@@ -17,6 +17,7 @@ USER_AGENT = "ai-qa-digest/1.0 (personal reader)"
 ANTHROPIC_MODEL = "claude-haiku-5-5"   # override with the ANTHROPIC_MODEL env var
 MAX_SUMMARIES_PER_RUN = 80             # cost guard
 BACKFILL_PER_RUN = 25                  # re-read older stories that predate the full reader
+READER_VERSION = 2                     # bump when the reader improves: older summaries are redone (a few per run)
 
 # ---------------------------------------------------------------- releases
 # (display name, feed url, regex of titles to skip)

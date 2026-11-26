@@ -32,9 +32,9 @@ const ICON_PATHS = {
 };
 const icon = (n, cls = "") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[n] || ""}</svg>`;
 const NAV = [
-  ["hot", "brief", "Briefing"], ["today", "feed", "Feed"], ["trends", "trend", "Trends & terms"],
-  ["topics", "tag", "Topics"], ["releases", "box", "Releases"], ["learn", "learn", "Learn (free)"],
-  ["library", "book", "Library"], ["saved", "star", "Saved"], ["more", "gear", "Sources & settings"],
+  ["hot", "brief", "Briefing"], ["today", "feed", "Feed"], ["trends", "trend", "Trends"],
+  ["topics", "tag", "Topics"], ["releases", "box", "Releases"], ["learn", "learn", "Learn"],
+  ["library", "book", "Library"], ["saved", "star", "Saved"], ["more", "gear", "Settings"],
 ];
 const TABS = [["hot", "brief", "Brief"], ["today", "feed", "Feed"], ["trends", "trend", "Trends"], ["learn", "learn", "Learn"], ["more", "menu", "More"]];
 const FEED_GROUPS = [["all", "All"], ["Releases", "Releases"], ["Official updates", "Official"],
@@ -235,6 +235,11 @@ function explainItem(it) {
 }
 
 // ---------------------------------------------------------------- cards
+// up to 3 quoted key points that the summary doesn't already say (the drawer has them all)
+function cardPoints(it) {
+  const sum = it.summary || "";
+  return (it.key_points || []).filter((k) => k && k.point && !sum.includes(k.point)).slice(0, 3);
+}
 function card(it, opts = {}) {
   const [, q] = qOf(it);
   const read = prefs.read.has(it.key), saved = !!prefs.saved[it.key];
@@ -243,7 +248,8 @@ function card(it, opts = {}) {
   const [prov, provTitle] = provenance(it);
   const reason = (it.reasons || [])[0];
   const saveBtn = `<button class="ib" data-act="save" aria-pressed="${saved}" aria-label="${saved ? "Remove from saved" : "Save"}" title="Save">${icon("bookmark", saved ? "fill" : "")}</button>`;
-  const openBtn = `<button class="ib go" data-act="reader" aria-label="Open summary" title="Open summary">${icon("arrow")}</button>`;
+  const openBtn = `<button class="brief-btn" data-act="reader" aria-label="Open the full briefing">Full briefing ${icon("arrow")}</button>`;
+  const points = cardPoints(it);
   if (dense() && !opts.full) {
     return `<article class="card row ${q} ${read ? "read" : ""}" data-key="${esc(it.key)}" tabindex="0" aria-label="${esc(it.title)}">
       <span class="qdot ${q}" title="${esc(it.quadrant || "FYI")}"></span>
@@ -267,8 +273,10 @@ function card(it, opts = {}) {
     <div class="card-body">
       <div class="card-main">
         <a class="t" href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener" data-act="open">${esc(it.title)}</a>
-        ${it.summary ? `<p class="sum clamp2">${esc(it.summary)}</p>` : it.group === LIVE_GROUP
-          ? '<p class="sum lbl">Live from Hacker News — full summary with the next update.</p>' : ""}
+        ${it.summary ? `<p class="sum clamp4">${esc(it.summary)}</p>` : it.group === LIVE_GROUP
+          ? '<p class="sum lbl">Live from Hacker News — full summary with the next update.</p>'
+          : it.no_text_reason ? `<p class="sum lbl">${esc(it.no_text_reason)}</p>` : ""}
+        ${points.length ? `<ul class="kp">${points.map((k) => `<li>${k.heading ? `<b>${esc(k.heading)}:</b> ` : ""}${esc(k.point)}</li>`).join("")}</ul>` : ""}
       </div>
       ${cover && !opts.noThumb ? `<img class="thumb" src="${esc(cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}
     </div>
@@ -570,7 +578,7 @@ function renderNav() {
     trends: (data.trends || []).length } : {};
   const side = $("#sidenav"), chips = $("#chipnav");
   if (side) side.innerHTML = NAV.map(([t, i, n]) => `<button data-tab="${t}" aria-current="${t === tab ? "page" : "false"}">${icon(i)}<span>${esc(n)}</span>${counts[t] ? `<span class="n">${esc(counts[t])}</span>` : ""}</button>`).join("");
-  if (chips) chips.innerHTML = NAV.map(([t, i, n]) => `<button data-tab="${t}" aria-current="${t === tab ? "page" : "false"}">${icon(i)}${esc(n)}</button>`).join("");
+  if (chips) chips.innerHTML = NAV.map(([t, i, n]) => `<button data-tab="${t}" aria-current="${t === tab ? "page" : "false"}">${icon(i)}<span>${esc(n)}</span>${counts[t] ? `<span class="n">${esc(counts[t])}</span>` : ""}</button>`).join("");
   const tabsEl = $("#tabs");
   if (tabsEl) tabsEl.innerHTML = TABS.map(([t, i, n]) => `<button data-tab="${t}" aria-current="${t === tab || (t === "more" && !TABS.some(([x]) => x === tab)) ? "page" : "false"}">${icon(i)}<span>${esc(n)}</span></button>`).join("");
 }
@@ -656,7 +664,7 @@ function onClick(e) {
   if (readerKey && (d.act === "save" || d.act === "read")) openReader(readerKey);
 }
 view.addEventListener("click", onClick);
-for (const sel of ["#rail", "#reader", ".sidebar", "#chipnav", "#tabs", ".topbar"]) {
+for (const sel of ["#rail", "#reader", "#tabs", ".topbar"]) {   // .topbar holds the nav bar
   const el = $(sel);
   if (el && el !== view) el.addEventListener("click", onClick);
 }

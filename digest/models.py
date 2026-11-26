@@ -34,6 +34,7 @@ class Item:
     terms: list[str] = field(default_factory=list)          # glossary / trending terms in it
     discussion: list[str] = field(default_factory=list)     # quoted highlights from the HN thread
     enriched: bool = False        # True once the full reader (key points, outline...) has run
+    reader_v: int = 0             # version of the reader that made the summary (re-read when it improves)
     no_text_reason: str = ""      # why there is no summary (blocked site, link-only post...)
     body: str = ""                # raw source text (never stored)
     html: str = ""                # raw source HTML (never stored)

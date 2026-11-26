@@ -169,11 +169,11 @@ def summarise(item: Item, ask=None, get_text=None, get_html=None) -> None:
         if got["words"] > parsed["words"]:
             parsed = got
     text = parsed["text"]
-    item.enriched = True
+    item.enriched, item.reader_v = True, config.READER_VERSION
     item.discussion = discussion_highlights(item.__dict__.get("_hn"))
     item.images, item.cover = parsed["images"], parsed["cover"]
     item.read_minutes = max(1, round(parsed["words"] / 230)) if parsed["words"] else 0
-    ext = extract(parsed["sections"], item.title)
+    ext = extract(parsed["sections"], item.title, changelog=item.key.startswith("rel:") or None)
     item.key_points, item.outline = ext["key_points"], ext["outline"]
 
     ask = ask if ask is not None else {"claude": _ask_claude, "openai": _ask_openai}.get(provider() or "")

@@ -362,3 +362,17 @@ test("reader shows quoted discussion highlights and a clear reason when there is
   assert.ok(html.includes("From the discussion") && html.includes("&lt;b&gt;comment&lt;/b&gt;"));
   assert.ok(html.includes("The site blocked or timed out"));
 });
+
+test("cards show a detailed summary: up to 3 new key points (escaped) and a Full briefing button", async () => {
+  const it = makeItem(1, { summary: "Summary sentence that is also a key point.", summary_kind: "extractive",
+    key_points: [{ heading: "Intro", point: "Summary sentence that is also a key point." },
+      { heading: "<i>Setup</i>", point: "Install <script>x</script> first." }, { heading: "", point: "Point three." },
+      { heading: "Run", point: "Point four." }, { heading: "Extra", point: "Point five is hidden on the card." }] });
+  const { t } = await boot({ data: makeData([it]) });
+  const html = t.card(it);
+  assert.ok(html.includes('class="kp"') && html.includes("Full briefing"));
+  assert.ok(html.includes("Point three.") && html.includes("Point four.") && !html.includes("Point five"));
+  assert.equal((html.match(/<li>/g) || []).length, 3);                       // the summary's own sentence is skipped
+  assert.ok(!html.includes("<script>x") && html.includes("&lt;i&gt;Setup&lt;/i&gt;"));
+  assert.ok(html.includes("clamp4"));
+});
