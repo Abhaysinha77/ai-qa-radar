@@ -49,7 +49,9 @@ def score(item: Item, now: datetime | None = None, rules: dict | None = None) ->
     importance = min(60, stack) + velocity + min(16, 8 * len(item.also_in))
     importance += rules["official_boost"] if official else 0
 
-    reasons = [r["label"] for r in rules["urgency"] if re.search(r["pattern"], text, re.I)]
+    # news/community items: only the title can make something urgent (summaries mention lots)
+    urgent_text = item.title if rules.get("urgency_title_only_for_news") and not official else text
+    reasons = [r["label"] for r in rules["urgency"] if re.search(r["pattern"], urgent_text, re.I)]
     urgency = max([r["weight"] for r in rules["urgency"] if r["label"] in reasons], default=0)
     if item.group == "Releases":
         urgency = max(urgency, rules["release_urgency"])

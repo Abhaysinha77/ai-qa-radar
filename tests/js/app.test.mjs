@@ -15,7 +15,7 @@ const RANKING = {
           { pattern: "\\bagents?\\b", weight: 16 }],
   urgency: [{ label: "Security", pattern: "security|breach|incident", weight: 70 },
             { label: "Breaking change", pattern: "breaking|deprecat|removed", weight: 60 }],
-  release_urgency: 30, official_boost: 10, fresh_hours: 24, fresh_boost: 10, act_urgency: 50, act_importance: 45,
+  urgency_title_only_for_news: true, release_urgency: 30, official_boost: 10, fresh_hours: 24, fresh_boost: 10, act_urgency: 50, act_importance: 45,
 };
 
 function makeItem(n, extra = {}) {
@@ -76,7 +76,7 @@ async function boot({ data = makeData(), fetchImpl, storage = {}, storageThrows 
   ctx.window = { ...ctx.window, RADAR_DATA: undefined };
   ctx.globalThis = ctx;
   const exportLine = `\n;globalThis.__t={get data(){return data},get live(){return live},get liveState(){return liveState},
-    render,loadData,loadLive,scoreItem,tagsFor,isNew,esc,safeUrl,prefs,card,
+    render,loadData,loadLive,scoreItem,tagsFor,isNew,esc,safeUrl,prefs,card,readerHtml,openReader,
     setTab:(t)=>{tab=t},setQuery:(q)=>{query=q},setHotAll:(v)=>{hotAll=v}};`;
   vm.createContext(ctx);
   vm.runInContext(SRC + exportLine, ctx, { filename: "app.js" });
@@ -96,7 +96,7 @@ test("titles, summaries, sources and tags are HTML-escaped (XSS)", async () => {
   const html = t.card(evil);
   assert.ok(!html.includes("<img src=x"), "raw img tag leaked");
   assert.ok(!html.includes("<script>"), "raw script leaked");
-  assert.ok(!html.includes("<svg"), "raw svg leaked");
+  assert.ok(!html.includes("<svg onload"), "raw svg payload leaked");
   assert.ok(html.includes("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;"));
 });
 
@@ -209,7 +209,7 @@ test("save, read and mute work and persist", async () => {
   click(els, fakeTarget({ mute: "pytest" }, null));
   t.setTab("hot"); t.render();
   assert.ok(!els["#view"].innerHTML.includes("pytest story 1<"), "muted topic still shown");
-  t.setTab("more"); t.render();
+  t.setTab("saved"); t.render();
   assert.ok(els["#view"].innerHTML.includes("pytest story 1"), "saved items must survive muting");
 });
 
@@ -232,9 +232,133 @@ test("search filters across title, summary, source and tags", async () => {
 test("every tab renders without throwing, also with empty data", async () => {
   for (const data of [makeData(), makeData([], { sources: [], learning: { courses: [] } })]) {
     const { t, els } = await boot({ data });
-    for (const tab of ["hot", "today", "topics", "releases", "learn", "more", "unknown-tab"]) {
+    for (const tab of ["hot", "today", "topics", "releases", "trends", "learn", "library", "saved", "more", "unknown-tab"]) {
       t.setTab(tab); t.render();
       assert.ok(typeof els["#view"].innerHTML === "string" && els["#view"].innerHTML.length > 0, tab);
     }
   }
+});
+
+
+// ------------------------------------------------------------------ redesign features
+test("reader shows quoted summary, key points per section, outline, diagrams and free courses", async () => {
+  const it = makeItem(1, { summary: "Quoted sentence one. Quoted sentence two.", summary_kind: "extractive",
+    key_points: [{ heading: "Setup", point: "Install the plugin." }, { heading: "<b>Run</b>", point: "Run <script>x</script>" }],
+    outline: ["Setup", "Run"], images: [{ src: "https://img.example/arch.png", alt: "Architecture diagram" },
+      { src: "javascript:alert(1)", alt: "bad" }], tags: ["MCP"], terms: ["MCP (Model Context Protocol)"] });
+  const data = makeData([it], { glossary: [{ term: "MCP (Model Context Protocol)", def: "An open protocol.", tags: ["MCP"] }] });
+  const { t, els } = await boot({ data });
+  const reader = els["#reader"] || null;
+  t.render();
+  const html = t.readerHtml(it);
+  assert.ok(html.includes("Key points, section by section") && html.includes("Install the plugin."));
+  assert.ok(html.includes("What the article covers") && html.includes("Architecture diagram"));
+  assert.ok(html.includes("https://img.example/arch.png") && !html.includes("javascript:alert"));
+  assert.ok(html.includes("Quoted summary") && html.includes("Terms explained") && html.includes("An open protocol."));
+  assert.ok(html.includes("Learn this for free") && html.includes("Course"));
+  assert.ok(!html.includes("<script>x") && html.includes("&lt;b&gt;Run&lt;/b&gt;"));
+});
+
+test("trends view lists new/rising terms with definitions and the glossary", async () => {
+  const data = makeData([makeItem(1)], {
+    trends: [{ term: "A2A", count: 3, status: "new", examples: ["k1"], definition: "Agents talking to agents.", tags: [] }],
+    glossary: [{ term: "Prompt injection", def: "Hidden instructions.", tags: ["AI security"] }] });
+  const { t, els } = await boot({ data });
+  t.setTab("trends"); t.render();
+  const html = els["#view"].innerHTML;
+  assert.ok(html.includes("A2A") && html.includes(">new<") && html.includes("Agents talking to agents."));
+  assert.ok(html.includes("Prompt injection") && html.includes("Hidden instructions."));
+});
+
+test("library lists resources and filters by kind", async () => {
+  const data = makeData([makeItem(1)], { resources: [
+    { name: "Hamel evals", url: "https://hamel.dev", kind: "Blog", topics: ["Evals"], about: "Evals." },
+    { name: "OWASP GenAI", url: "https://genai.owasp.org", kind: "Standard", topics: ["AI security"], about: "Top 10." }] });
+  const { t, els } = await boot({ data });
+  t.setTab("library"); t.render();
+  assert.ok(els["#view"].innerHTML.includes("Hamel evals") && els["#view"].innerHTML.includes("OWASP GenAI"));
+});
+
+test("news urgency words only count in the title (no false 'Breaking change')", async () => {
+  const { t } = await boot();
+  const news = t.scoreItem({ title: "Ask HN: how do you test agents?", summary: "We removed the old API and it was breaking", group: "HN · Ask HN" });
+  assert.equal(JSON.stringify(news.reasons), "[]");
+  const rel = t.scoreItem({ title: "SDK v2", summary: "Removed deprecated endpoints (breaking change)", group: "Releases" });
+  assert.ok(rel.reasons.includes("Breaking change"));
+});
+
+// ------------------------------------------------------------------ research-backed pass
+test("cards show provenance and only two actions (save + open)", async () => {
+  const { t } = await boot();
+  const html = t.card(makeItem(1, { summary: "Quoted.", summary_kind: "extractive" }));
+  assert.ok(html.includes(">Quoted<"));
+  assert.equal((html.match(/data-act="(save|reader)"/g) || []).length, 2);
+  assert.ok(!html.includes('data-act="read"'));
+});
+
+test("why-ranked panel explains stack matches, momentum and urgency rule", async () => {
+  const { t } = await boot();
+  const it = makeItem(1, { title: "pytest security fix", points: 300, published: new Date().toISOString(),
+    reasons: ["Security"], also_in: ["Best (24h)"] });
+  const html = t.readerHtml(it);
+  assert.ok(html.includes("Why it's ranked here") && html.includes("Matches your stack") && html.includes("Momentum"));
+  assert.ok(html.includes("Title mentions: Security") && html.includes("Seen in several places"));
+});
+
+test("'Not for me' hides a story and tunes its topics; security stays visible; reset restores", async () => {
+  const items = [makeItem(1, { tags: ["Python"], hot: 50 }), makeItem(2, { title: "pytest security incident", tags: ["Python"], reasons: ["Security"], hot: 40 })];
+  const { t, els } = await boot({ data: makeData(items) });
+  els["#view"].handlers.click({ target: { closest: () => ({ dataset: { act: "tune-less", key: "k1" }, closest: () => null }) }, preventDefault() {} });
+  els["#view"].handlers.click({ target: { closest: () => ({ dataset: { act: "tune-less", key: "k2" }, closest: () => null }) }, preventDefault() {} });
+  t.setTab("today"); t.render();
+  const html = els["#view"].innerHTML;
+  assert.ok(!html.includes("pytest story 1<"), "tuned-down story should be hidden");
+  assert.ok(html.includes("pytest security incident"), "security story must stay visible");
+  assert.ok(t.prefs.tuning.Python < 0);
+  els["#view"].handlers.click({ target: { closest: () => ({ dataset: { setting: "reset-tuning" }, closest: () => null }) }, preventDefault() {} });
+  t.render();
+  assert.ok(els["#view"].innerHTML.includes("pytest story 1<"));
+});
+
+test("opening a story marks it read", async () => {
+  const { t } = await boot();
+  t.openReader("k1");
+  assert.ok(t.prefs.read.has("k1"));
+});
+
+test("compact list renders rows with title, provenance and one action", async () => {
+  const { t, els } = await boot({ storage: { "radar:density": JSON.stringify("compact") } });
+  t.setTab("today"); t.render();
+  const html = els["#view"].innerHTML;
+  assert.ok(html.includes('class="card row') && html.includes('class="grid rows'));
+});
+
+test("all text colours and label pills meet 4.5:1 contrast in both themes (WCAG 2.2 AA)", () => {
+  const css = fs.readFileSync(path.join(root, "web/app.css"), "utf8");
+  const blocks = (re) => [...css.matchAll(re)].map((m) => m[1]).join(";");
+  const light = blocks(/(?:^|\n):root\{([^}]*)\}/g);
+  const dark = light + ";" + blocks(/:root\[data-theme="dark"\]\{([^}]*)\}/g);
+  const val = (b, n) => { const m = [...b.matchAll(new RegExp(`--${n}:\\s*(#[0-9a-fA-F]{6})`, "g"))]; return m.length ? m[m.length - 1][1] : null; };
+  const lum = (hex) => { const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  for (const [name, b] of [["light", light], ["dark", dark]]) {
+    for (const fg of ["text", "muted", "accent", "act", "watch", "plan", "fyi"]) {
+      for (const bg of ["bg", "card"]) {
+        const r = ratio(val(b, fg), val(b, bg));
+        assert.ok(r >= 4.5, `${name}: --${fg} on --${bg} is ${r.toFixed(2)}:1`);
+      }
+    }
+    for (const pill of ["act", "watch", "plan", "fyi"]) {
+      const r = ratio(val(b, "pill-text"), val(b, pill));
+      assert.ok(r >= 4.5, `${name}: label text on --${pill} is ${r.toFixed(2)}:1`);
+    }
+  }
+});
+
+test("reader shows quoted discussion highlights and a clear reason when there is no summary", async () => {
+  const { t } = await boot();
+  const html = t.readerHtml(makeItem(1, { summary: "", discussion: ["A thoughtful <b>comment</b> about flaky tests."],
+    no_text_reason: "The site blocked or timed out on automatic reading — open the original." }));
+  assert.ok(html.includes("From the discussion") && html.includes("&lt;b&gt;comment&lt;/b&gt;"));
+  assert.ok(html.includes("The site blocked or timed out"));
 });

@@ -1,5 +1,6 @@
 """End-to-end: run the REAL collector (all jobs, threads, merge, state, ranking, output) against a
 fake internet. Covers happy path, broken sources, reruns, new versions next day, and volume."""
+import hashlib
 import json
 import time
 from datetime import datetime, timedelta, timezone
@@ -10,6 +11,9 @@ from digest import build as build_mod
 from digest import config
 
 NOW = datetime(2026, 11, 26, 6, 0, tzinfo=timezone.utc)
+VOCAB = ("amber basalt cobalt dune ember fjord glacier harbor iris juniper kelp lagoon meadow nebula "
+         "onyx prairie quartz raven summit tundra umber violet willow xenon yarrow zephyr aspen birch "
+         "cedar delta").split()
 
 
 def atom(entries):
@@ -67,9 +71,12 @@ class FakeInternet:
         if any(h in url for h in ("hamel.dev", "eugeneyan.com", "martinfowler.com", "testing.googleblog.com",
                                   "sebastianraschka", "pythoninsider", "realpython", "openai.com/news",
                                   "modelcontextprotocol.io", "github.blog", "pypi.org/feed", "devblogs.microsoft",
-                                  "huggingface.co/blog", "arxiv.org")):
+                                  "huggingface.co/blog", "arxiv.org", "latent.space", "importai",
+                                  "pythonbytes.fm", "dev.to")):
             host = urlsplit(url).netloc
-            posts = [(f"{host} post about pytest and agents {n}", f"https://{host}/p{n}",
+            seed = int(hashlib.sha1(url.encode()).hexdigest(), 16)
+            words = [VOCAB[(seed >> (5 * k)) % len(VOCAB)] for k in range(6)]
+            posts = [(f"{' '.join(words)} pytest agents {n}", f"https://{host}{urlsplit(url).path}/p{n}",
                       "Tue, 25 Nov 2026 10:00:00 GMT", "&lt;p&gt;" + "A useful paragraph about testing AI agents. " * 12 + "&lt;/p&gt;")
                      for n in range(3)]
             return rss(posts)

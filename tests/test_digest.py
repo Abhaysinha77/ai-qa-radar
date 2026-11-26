@@ -175,7 +175,7 @@ def test_scores_are_bounded_and_tagged():
 
 
 # --------------------------------------------------------------- summaries
-def test_ai_summary_is_capped_at_200_words_and_made_once(tmp_path):
+def test_ai_summary_is_capped_at_400_words_and_made_once(tmp_path):
     calls = []
 
     def fake_llm(prompt):
@@ -185,26 +185,28 @@ def test_ai_summary_is_capped_at_200_words_and_made_once(tmp_path):
     item = lambda: Item(key="k1", title="Playwright 1.65", url="https://e/1", source="Blog", body=LONG)  # noqa: E731
     _, data = run(tmp_path, [("Practitioner blogs", [item()])], ask=fake_llm)
     stored = data["items"][0]
-    assert stored["summary_kind"] == "ai" and len(stored["summary"].split()) <= 200
+    assert stored["summary_kind"] == "ai" and len(stored["summary"].split()) <= 400
     assert "body" not in stored and data["summaries"] == "ai"
     run(tmp_path, [("Practitioner blogs", [item()])], day=27, ask=fake_llm)
     assert len(calls) == 1
 
 
-def test_without_api_key_an_excerpt_is_used(tmp_path):
+def test_without_api_key_a_quoted_extractive_summary_is_used(tmp_path):
     for var in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY"):
         os.environ.pop(var, None)
     _, data = run(tmp_path, [("Practitioner blogs", [Item(key="k2", title="T", url="https://e/2", source="Blog", body=LONG)])])
-    assert data["summaries"] == "excerpt"
-    assert data["items"][0]["summary_kind"] == "excerpt" and len(data["items"][0]["summary"].split()) <= 80
+    assert data["summaries"] == "extractive"
+    item = data["items"][0]
+    assert item["summary_kind"] == "extractive" and len(item["summary"].split()) <= 260
+    assert item["summary"] in LONG  # quoted, never rewritten
 
 
-def test_llm_failure_falls_back_to_excerpt(tmp_path):
+def test_llm_failure_falls_back_to_quoted_summary(tmp_path):
     def broken(prompt):
         raise RuntimeError("API down")
     _, data = run(tmp_path, [("Practitioner blogs", [Item(key="k3", title="T", url="https://e/3", source="Blog", body=LONG)])],
                   ask=broken)
-    assert data["items"][0]["summary_kind"] == "excerpt"
+    assert data["items"][0]["summary_kind"] == "extractive"
 
 
 def test_html_to_text_prefers_article_paragraphs():

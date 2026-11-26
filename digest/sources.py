@@ -68,7 +68,7 @@ def _entries(text: str) -> list[dict]:
                     if node.findtext(t)), "") or ""
         body = BeautifulSoup(raw, "html.parser").get_text(" ", strip=True) if raw else ""
         out.append({"title": (node.findtext("title") or "").strip(), "link": link,
-                    "date": _parse_date(date_text), "body": body})
+                    "date": _parse_date(date_text), "body": body, "html": raw})
     return out
 
 
@@ -97,7 +97,7 @@ def parse_feed(text: str, name: str, *, skip: str | None = None, only: str | Non
             shown = title
         items.append(Item(key=key, title=shown, url=link, source=name,
                           published=when.date().isoformat() if when else None,
-                          body=entry["body"]))
+                          body=entry["body"], html=entry["html"]))
         if len(items) >= limit:
             break
     return items

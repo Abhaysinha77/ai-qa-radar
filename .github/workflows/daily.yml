@@ -52,6 +52,9 @@ jobs:
             git show FETCH_HEAD:seen.json > state/seen.json || true
           fi
 
+      - name: Self-hosted fonts (pinned + SHA-256 checked; falls back to system font)
+        run: python scripts/fetch_fonts.py || echo "fonts unavailable - using system font"
+
       - name: Collect, rank, summarise, build app
         run: python -m digest --out site --state state/seen.json
 

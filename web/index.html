@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://hn.algolia.com; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://hn.algolia.com; manifest-src 'self'">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#faf9f8" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="AI+QA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI+QA Radar">
 <title>AI + QA Radar</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -17,25 +18,40 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<header class="top">
-  <div class="title-row">
-    <h1>AI + QA Radar</h1>
-    <button id="refresh" class="icon-btn" aria-label="Refresh now" title="Refresh now">↻</button>
+<div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="app">
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" href="#hot" data-tab="hot"><img src="icon.svg" alt="" width="32" height="32"><span>AI + QA <b>Radar</b></span></a>
+    <nav id="sidenav" class="sidenav"></nav>
+    <div class="side-foot">
+      <button class="ghost-btn" data-act="theme" aria-label="Switch theme"><span class="theme-ico">◐</span> <span class="theme-label">Theme</span></button>
+      <div id="side-status" class="side-status"></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <a class="brand brand-compact" href="#hot" data-tab="hot"><img src="icon.svg" alt="" width="28" height="28"><span>AI + QA <b>Radar</b></span></a>
+      <div class="search-wrap">
+        <svg class="i search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+        <input id="search" type="search" placeholder="Search news, terms, courses…" aria-label="Search" autocomplete="off"><kbd class="kbd">⌘K</kbd>
+      </div>
+      <button class="icon-btn" data-act="density" aria-label="Switch compact / comfortable view" title="Compact / comfortable view"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <button id="refresh" class="icon-btn" aria-label="Refresh now" title="Refresh now">↻</button>
+      <button class="icon-btn only-compact" data-act="theme" aria-label="Switch theme" title="Theme">◐</button>
+    </header>
+    <div id="status" class="status" aria-live="polite">Loading…</div>
+    <nav id="chipnav" class="chipnav" aria-label="Sections"></nav>
+    <main id="view" tabindex="-1"></main>
   </div>
-  <div id="status" class="status" aria-live="polite">Loading…</div>
-  <input id="search" type="search" placeholder="Search everything…" aria-label="Search" autocomplete="off">
-</header>
 
-<main id="view" tabindex="-1"></main>
+  <aside id="rail" class="rail" aria-label="Trending and learning"></aside>
+</div>
 
-<nav class="tabs" aria-label="Sections">
-  <button data-tab="hot" aria-current="page"><span>🔥</span>Hot</button>
-  <button data-tab="today"><span>📰</span>Today</button>
-  <button data-tab="topics"><span>🏷️</span>Topics</button>
-  <button data-tab="releases"><span>📦</span>Releases</button>
-  <button data-tab="learn"><span>🎓</span>Learn</button>
-  <button data-tab="more"><span>⭐</span>Saved+</button>
-</nav>
+<nav id="tabs" class="tabs" aria-label="Sections"></nav>
+
+<div id="reader-backdrop" class="reader-backdrop" hidden></div>
+<aside id="reader" class="reader" role="dialog" aria-modal="true" aria-label="Article summary" hidden></aside>
 
 <noscript><p class="empty">This app needs JavaScript. Raw data: <a href="data.json">data.json</a></p></noscript>
 <script src="app.js" defer></script>

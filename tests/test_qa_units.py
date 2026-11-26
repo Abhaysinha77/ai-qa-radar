@@ -226,10 +226,10 @@ def test_skip_fetch_only_matches_real_hosts(url, skip):
     assert bool(SKIP_FETCH.search(url)) is skip
 
 
-def test_empty_ai_answer_falls_back_to_excerpt():
+def test_empty_ai_answer_falls_back_to_quoted_summary():
     item = it("T", body="Real article text about pytest fixtures. " * 20)
     summarise(item, ask=lambda p: "   ", get_text=lambda i: i.body)
-    assert item.summary and item.summary_kind == "excerpt"
+    assert item.summary and item.summary_kind == "extractive"
 
 
 def test_no_text_and_no_ai_leaves_summary_empty_not_crash():

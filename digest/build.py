@@ -23,7 +23,8 @@ from .notify import send_telegram
 from .rank import score, tags
 from .sources import (algolia_url, fetch, parse_algolia, parse_feed, parse_hf_papers,
                       parse_hn_bestcomments, parse_hn_list)
-from .summarize import provider, summarise_all
+from .summarize import _wrap, provider, summarise_all
+from .trends import extract_terms, trending, update_history
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
@@ -131,23 +132,36 @@ def build(out_dir: Path, state_path: Path, now: datetime | None = None,
             group_items = group_items[:max(0, config.MAX_PER_GROUP - shown_today.get(group, 0))]
         chosen += group_items
     summarised = summarise_all(chosen, config.MAX_SUMMARIES_PER_RUN, ask=ask,
-                               get_text=(lambda i: i.body) if offline else None)
+                               get_html=(lambda i: [i.html or _wrap(i.body)]) if offline else None)
     already = [i for i in items if not state.is_new(i)]
     state.stamp(chosen + already, today, now_iso=now.astimezone(timezone.utc).isoformat(timespec="minutes"))
     state.prune(today, config.SEEN_RETENTION_DAYS, config.ARCHIVE_DAYS)
 
     page_items = state.recent(today, config.ARCHIVE_DAYS)
+    # backfill: stories collected before the full reader existed get key points, outline,
+    # diagrams and discussion highlights (a few per run, each only once)
+    backlog = [i for i in page_items if not i.enriched and i.summary_kind != "ai"][:config.BACKFILL_PER_RUN]
+    if backlog:
+        summarise_all(backlog, len(backlog), ask=ask, force=True,
+                      get_html=(lambda i: [i.html or _wrap(i.body)]) if offline else None)
+        for i in backlog:
+            i.enriched = True
     for item in page_items:  # re-score every run: votes and age change
         item.tags = tags(item)
+        points_text = " ".join(k.get("point", "") for k in item.key_points)
+        item.terms = extract_terms(item.title, f"{item.summary} {points_text}")
         item.__dict__.update(score(item, now=now.astimezone(timezone.utc)))
         item.action = item.quadrant in ("Act now", "Watch")
         state.items[item.key] = item.to_dict()
     page_items.sort(key=lambda i: (i.first_seen, i.hot), reverse=True)
+    page_dicts = [i.to_dict() for i in page_items]
+    state.term_history = update_history(state.term_history, page_dicts, today)
+    trends = trending(state.term_history, page_dicts, today)
 
     data = {
         "generated": now.isoformat(timespec="minutes"),
         "today": today.isoformat(),
-        "summaries": "ai" if (provider() or ask) else "excerpt",
+        "summaries": "ai" if (provider() or ask) else "extractive",
         "groups": group_order(),
         "tags": config.TAGS,
         "tag_exclude": config.TAG_EXCLUDE,
@@ -157,8 +171,11 @@ def build(out_dir: Path, state_path: Path, now: datetime | None = None,
                  "relevant": config.RELEVANT.replace("(?i)", "")},
         "check_pages": [{"name": n, "url": u} for n, u in config.CHECK_PAGES],
         "learning": {"courses": config.LEARNING, "checked": config.LEARNING_CHECKED},
+        "trends": trends,
+        "glossary": [{k: g[k] for k in ("term", "def", "tags")} for g in config.GLOSSARY],
+        "resources": config.RESOURCES,
         "sources": status,
-        "items": [i.to_dict() for i in page_items],
+        "items": page_dicts,
     }
     out_dir.mkdir(parents=True, exist_ok=True)
     if WEB_DIR.exists():

@@ -1,9 +1,10 @@
 // Offline support: app shell from cache, data.json network-first (falls back to last copy).
-const CACHE = "radar-v1";
+const CACHE = "radar-v6";
 const SHELL = ["./", "index.html", "app.css", "app.js", "manifest.webmanifest", "icon.svg", "icon-192.png"];
+const OPTIONAL = ["fonts/geist.woff2", "fonts/geist-mono.woff2"];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL).then(() => Promise.allSettled(OPTIONAL.map((f) => c.add(f))))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))

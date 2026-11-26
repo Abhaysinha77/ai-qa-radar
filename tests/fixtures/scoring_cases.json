@@ -2,42 +2,67 @@
  "ranking": {
   "stack": [
    {
+    "label": "Your test tools (pytest / Playwright / Selenium)",
     "pattern": "\\bpytest\\b|\\bplaywright\\b|\\bselenium\\b|webdriver",
     "weight": 35
    },
    {
+    "label": "Testing & QA",
     "pattern": "test automation|flaky|end-to-end|\\be2e\\b|\\bqa\\b|quality assurance|testing",
     "weight": 22
    },
    {
+    "label": "MCP",
     "pattern": "\\bmcp\\b|model context protocol",
     "weight": 25
    },
    {
+    "label": "Coding agents",
     "pattern": "coding agent|claude code|\\bcodex\\b|copilot|\\bcursor\\b",
     "weight": 20
    },
    {
+    "label": "Evals & LLM testing",
     "pattern": "\\bevals?\\b|benchmark|llm testing|red[- ]team",
     "weight": 20
    },
    {
+    "label": "AI agents",
     "pattern": "\\bagents?\\b|agentic",
     "weight": 16
    },
    {
+    "label": "OpenAI / Anthropic",
     "pattern": "anthropic|\\bclaude\\b|openai|\\bgpt",
     "weight": 16
    },
    {
+    "label": "RAG",
     "pattern": "\\brag\\b|retrieval|embedding|vector",
     "weight": 14
    },
    {
+    "label": "Python",
     "pattern": "\\bpython\\b|\\bpypi\\b",
     "weight": 14
    },
    {
+    "label": "AI security & browser agents",
+    "pattern": "prompt injection|jailbreak|guardrail|computer[- ]use|browser (agent|automation)",
+    "weight": 20
+   },
+   {
+    "label": "API / performance / a11y / mobile testing",
+    "pattern": "api test|contract test|load test|performance test|accessibility|wcag|appium|mobile test",
+    "weight": 18
+   },
+   {
+    "label": "Observability, context & multi-agent",
+    "pattern": "observability|opentelemetry|context engineering|agent skills?|multi[- ]agent|\\ba2a\\b",
+    "weight": 14
+   },
+   {
+    "label": "General AI",
     "pattern": "\\bllms?\\b|\\bai\\b|\\bmodels?\\b",
     "weight": 6
    }
@@ -64,6 +89,7 @@
     "weight": 45
    }
   ],
+  "urgency_title_only_for_news": true,
   "release_urgency": 30,
   "official_boost": 10,
   "fresh_hours": 24,
@@ -85,6 +111,15 @@
   "OpenAI": "openai|\\bgpt",
   "Anthropic": "anthropic|\\bclaude\\b",
   "Security": "security|\\bcve\\b|vulnerab|exploit|breach|malware|compromis",
+  "AI security": "prompt injection|jailbreak|guardrail|\\bllm security|red[- ]team",
+  "Browser agents": "computer[- ]use|browser (agent|automation)|playwright mcp|\\boperator agent",
+  "Observability": "observability|opentelemetry|\\btracing\\b|\\btraces\\b",
+  "Context engineering": "context engineering|context window|agent skills?|agents\\.md|prompt engineering",
+  "Multi-agent": "multi[- ]agent|\\ba2a\\b|agent2agent|agent[- ]to[- ]agent",
+  "API testing": "api test|contract test|openapi|\\bpact\\b|postman",
+  "Performance": "load test|performance test|\\bk6\\b|locust|jmeter|latency",
+  "Accessibility": "accessibility|\\ba11y\\b|wcag|screen reader",
+  "Mobile testing": "appium|mobile test|xcuitest|espresso|maestro",
   "Free & learning": "free (course|class|certificat|training|tier|credits?|plan|access|usage|tool|api|ebook|book|workshop)|\\b(offers?|now|is|are|for|goes|went) free\\b|\\bcourses?\\b.{0,40}\\bfree\\b|\\bfree\\b.{0,40}\\bcourses?\\b|open[- ]sourced\\b|open[- ]sourcing|open[- ]weights?\\b|\\bacademy\\b|no cost|\\bfree credits\\b"
  },
  "tag_exclude": {
@@ -145,7 +180,8 @@
     "MCP",
     "Coding agents",
     "Anthropic",
-    "Security"
+    "Security",
+    "Browser agents"
    ]
   },
   {

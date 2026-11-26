@@ -24,13 +24,24 @@ class Item:
     quadrant: str = "FYI"         # Act now / Plan / Watch / FYI
     hot: int = 0                  # combined score used for the Hot list
     reasons: list[str] = field(default_factory=list)
-    summary: str = ""             # plain-English summary shown on the page
-    summary_kind: str = ""        # "ai" or "excerpt"
-    body: str = ""                # raw source text used for summarising (never stored)
+    summary: str = ""             # summary shown on the page
+    summary_kind: str = ""        # "ai", "extractive" (quoted sentences) or "excerpt"
+    key_points: list[dict] = field(default_factory=list)   # [{"heading", "point"}] quoted
+    outline: list[str] = field(default_factory=list)       # the article's section headings
+    images: list[dict] = field(default_factory=list)       # diagrams found in the article
+    cover: str = ""               # the article's own preview image (og:image)
+    read_minutes: int = 0
+    terms: list[str] = field(default_factory=list)          # glossary / trending terms in it
+    discussion: list[str] = field(default_factory=list)     # quoted highlights from the HN thread
+    enriched: bool = False        # True once the full reader (key points, outline...) has run
+    no_text_reason: str = ""      # why there is no summary (blocked site, link-only post...)
+    body: str = ""                # raw source text (never stored)
+    html: str = ""                # raw source HTML (never stored)
 
     def to_dict(self) -> dict:
         data = asdict(self)
         data.pop("body", None)
+        data.pop("html", None)
         return data
 
     @classmethod

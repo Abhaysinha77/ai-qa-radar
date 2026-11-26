@@ -38,7 +38,7 @@ SECURITY_HEADERS = {
     "Referrer-Policy": "no-referrer",
     "X-Frame-Options": "DENY",
     "Content-Security-Policy": (
-        "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+        "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https:; "
         "connect-src 'self' https://hn.algolia.com; manifest-src 'self'; frame-ancestors 'none'"
     ),
 }

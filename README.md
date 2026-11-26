@@ -51,6 +51,25 @@ ai-qa-radar/
 └── QA_REPORT.md    test approach, results, defects found and fixed
 ```
 
+## What's new in v2
+
+- **New design:** modern dark/light look (◐ switches theme), built for every screen — bottom tabs on
+  phones, chip navigation on tablets, sidebar + "Trending / Learn next" rail on desktops.
+- **Reader view** (tap *Read summary*): the summary, **key points section by section**, what the
+  article covers (its outline), **diagrams/architecture images found in the article**, the terms
+  explained in plain English, and free courses for that topic.
+- **Accurate long summaries without AI:** sentences are *quoted* from the article (most informative
+  ones, in order) plus one key point per section — nothing is rewritten, so nothing can be wrong.
+  Add an AI key later for rewritten summaries (up to 400 words, facts from the article only).
+- **Trends & terms:** new and rising terms/tools/models this week (e.g. "A2A", "GPT-6.2") and a
+  glossary of 40+ important concepts in plain English.
+- **Library:** 30+ hand-picked free resources (official docs, blogs, newsletters, podcasts,
+  tools, standards).
+- **More topics:** AI security & prompt injection, browser/computer-use agents, LLM observability,
+  context engineering, multi-agent/A2A, API/contract, performance, accessibility and mobile testing.
+- **Smarter urgency:** for news items only the *title* can make something urgent, so a long article
+  that merely mentions "removed" is no longer labelled "Breaking change".
+
 ## Tabs in the app
 
 | Tab | What's in it |
