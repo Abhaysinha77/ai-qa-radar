@@ -1,0 +1,9 @@
+[project]
+name = "ai-qa-digest"
+version = "1.0.0"
+description = "Personal daily digest of AI + QA releases, blogs and Hacker News, without repeats"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

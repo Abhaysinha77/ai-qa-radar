@@ -1,0 +1,94 @@
+name: Collect & publish
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes (GitHub may delay scheduled runs a little)
+  workflow_dispatch:          # manual run from the Actions tab or the GitHub mobile app
+  push:
+    branches: [main]
+
+permissions:
+  contents: write   # save state to the `data` branch
+  pages: write
+  id-token: write
+
+concurrency:
+  group: radar
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # All optional — add in Settings → Secrets and variables → Actions.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}   # AI summaries via Claude
+      ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}         # or via OpenAI
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }} # one morning message
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      NOTIFY_HOUR_UTC: ${{ vars.NOTIFY_HOUR_UTC }}
+      PAGE_URL: ${{ vars.PAGE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Python tests (unit, edge cases, end-to-end collector, scoring contract)
+        run: pytest -q
+
+      - name: App tests (JavaScript, Node's built-in runner — no npm install)
+        run: node --test tests/js/*.test.mjs
+
+      - name: Restore memory (state lives on the `data` branch, not in main's history)
+        run: |
+          mkdir -p state
+          if git fetch --depth=1 origin data 2>/dev/null; then
+            git show FETCH_HEAD:seen.json > state/seen.json || true
+          fi
+
+      - name: Collect, rank, summarise, build app
+        run: python -m digest --out site --state state/seen.json
+
+      - name: Save memory (single commit, force-pushed — no history growth; also keeps the schedule alive)
+        run: |
+          cp state/seen.json /tmp/seen.json
+          cd "$(mktemp -d)"
+          git init -q
+          git config user.name  "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git checkout -q --orphan data
+          cp /tmp/seen.json seen.json
+          git add seen.json
+          git commit -qm "state $(date -u +%FT%RZ)"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" data
+
+      - name: Upload for GitHub Pages
+        if: vars.DEPLOY_TARGET != 'cloudflare'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to Cloudflare Pages (private-repo option)
+        if: vars.DEPLOY_TARGET == 'cloudflare'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=${{ vars.CLOUDFLARE_PROJECT || 'ai-qa-radar' }} --branch=main
+
+  deploy:
+    if: vars.DEPLOY_TARGET != 'cloudflare'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

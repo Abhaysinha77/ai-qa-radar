@@ -1,0 +1,22 @@
+# Optional: run the backend server on Render's free plan (Dashboard → New → Blueprint → pick this repo).
+# Free web services sleep after 15 minutes without visits and take about a minute to wake up.
+services:
+  - type: web
+    name: ai-qa-radar
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m server
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: REFRESH_MINUTES
+        value: "30"
+      - key: STALE_MINUTES
+        value: "10"
+      # Optional: start from the memory GitHub Actions keeps, so restarts don't repeat stories.
+      # https://raw.githubusercontent.com/<you>/<repo>/data/seen.json
+      - key: SEED_STATE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

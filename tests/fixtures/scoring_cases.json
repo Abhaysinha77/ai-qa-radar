@@ -1,0 +1,268 @@
+{
+ "ranking": {
+  "stack": [
+   {
+    "pattern": "\\bpytest\\b|\\bplaywright\\b|\\bselenium\\b|webdriver",
+    "weight": 35
+   },
+   {
+    "pattern": "test automation|flaky|end-to-end|\\be2e\\b|\\bqa\\b|quality assurance|testing",
+    "weight": 22
+   },
+   {
+    "pattern": "\\bmcp\\b|model context protocol",
+    "weight": 25
+   },
+   {
+    "pattern": "coding agent|claude code|\\bcodex\\b|copilot|\\bcursor\\b",
+    "weight": 20
+   },
+   {
+    "pattern": "\\bevals?\\b|benchmark|llm testing|red[- ]team",
+    "weight": 20
+   },
+   {
+    "pattern": "\\bagents?\\b|agentic",
+    "weight": 16
+   },
+   {
+    "pattern": "anthropic|\\bclaude\\b|openai|\\bgpt",
+    "weight": 16
+   },
+   {
+    "pattern": "\\brag\\b|retrieval|embedding|vector",
+    "weight": 14
+   },
+   {
+    "pattern": "\\bpython\\b|\\bpypi\\b",
+    "weight": 14
+   },
+   {
+    "pattern": "\\bllms?\\b|\\bai\\b|\\bmodels?\\b",
+    "weight": 6
+   }
+  ],
+  "urgency": [
+   {
+    "label": "Security",
+    "pattern": "security|\\bcve\\b|vulnerab|exploit|breach|incident|compromis|malware",
+    "weight": 70
+   },
+   {
+    "label": "Breaking change",
+    "pattern": "breaking|removed|removal|deprecat|end[- ]of[- ]life|\\beol\\b|retir|sunset|shut ?down",
+    "weight": 60
+   },
+   {
+    "label": "Privacy",
+    "pattern": "silently|re-?enabl|data sharing|training on|telemetry",
+    "weight": 50
+   },
+   {
+    "label": "Outage",
+    "pattern": "outage|degraded|\\bdown\\b",
+    "weight": 45
+   }
+  ],
+  "release_urgency": 30,
+  "official_boost": 10,
+  "fresh_hours": 24,
+  "fresh_boost": 10,
+  "act_urgency": 50,
+  "act_importance": 45
+ },
+ "tags": {
+  "pytest": "\\bpytest\\b",
+  "Playwright": "\\bplaywright\\b",
+  "Selenium": "\\bselenium\\b|webdriver",
+  "Testing & QA": "\\btest(s|ing)?\\b|\\bqa\\b|flaky|end-to-end|\\be2e\\b|fuzz",
+  "Python": "\\bpython\\b|\\bpypi\\b|\\bcpython\\b",
+  "MCP": "\\bmcp\\b|model context protocol",
+  "RAG": "\\brag\\b|retrieval|embedding|vector (db|search|store)",
+  "Evals": "\\bevals?\\b|benchmark|red[- ]team",
+  "AI agents": "\\bagents?\\b|agentic",
+  "Coding agents": "coding agent|claude code|\\bcodex\\b|copilot|\\bcursor\\b|devin",
+  "OpenAI": "openai|\\bgpt",
+  "Anthropic": "anthropic|\\bclaude\\b",
+  "Security": "security|\\bcve\\b|vulnerab|exploit|breach|malware|compromis",
+  "Free & learning": "free (course|class|certificat|training|tier|credits?|plan|access|usage|tool|api|ebook|book|workshop)|\\b(offers?|now|is|are|for|goes|went) free\\b|\\bcourses?\\b.{0,40}\\bfree\\b|\\bfree\\b.{0,40}\\bcourses?\\b|open[- ]sourced\\b|open[- ]sourcing|open[- ]weights?\\b|\\bacademy\\b|no cost|\\bfree credits\\b"
+ },
+ "tag_exclude": {
+  "Free & learning": "lock[- ]free|wait[- ]free|free[- ]threading|free[- ]threaded|gil[- ]free|freedom|free speech|free will|hands[- ]free|duty[- ]free|cruelty[- ]free|sugar[- ]free|free fall|freelanc"
+ },
+ "cases": [
+  {
+   "item": {
+    "title": "pytest 9.2 removes deprecated fixture API (breaking change)",
+    "group": "Releases",
+    "points": null,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 45,
+    "urgency": 70,
+    "quadrant": "Act now"
+   },
+   "tags": [
+    "pytest"
+   ]
+  },
+  {
+   "item": {
+    "title": "Security incident: malicious MCP server steals tokens",
+    "group": "Topic · MCP",
+    "points": 300,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 25,
+    "urgency": 70,
+    "quadrant": "Watch"
+   },
+   "tags": [
+    "MCP",
+    "Security"
+   ]
+  },
+  {
+   "item": {
+    "title": "Claude Code + Playwright MCP + pytest security breaking change",
+    "group": "Releases",
+    "points": 5000,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 70,
+    "urgency": 80,
+    "quadrant": "Act now"
+   },
+   "tags": [
+    "pytest",
+    "Playwright",
+    "MCP",
+    "Coding agents",
+    "Anthropic",
+    "Security"
+   ]
+  },
+  {
+   "item": {
+    "title": "Deterministic Simulation Testing Is for Everyone",
+    "group": "Topic · Testing & QA",
+    "points": 90,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 22,
+    "urgency": 0,
+    "quadrant": "FYI"
+   },
+   "tags": [
+    "Testing & QA"
+   ]
+  },
+  {
+   "item": {
+    "title": "Macrohistory in Six Facts",
+    "group": "HN · Active",
+    "points": 160,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 0,
+    "urgency": 0,
+    "quadrant": "FYI"
+   },
+   "tags": []
+  },
+  {
+   "item": {
+    "title": "OpenAI seems to be silently re-enabling model training on Codex chats",
+    "group": "Topic · OpenAI",
+    "points": 536,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 42,
+    "urgency": 50,
+    "quadrant": "Watch"
+   },
+   "tags": [
+    "Coding agents",
+    "OpenAI"
+   ]
+  },
+  {
+   "item": {
+    "title": "Zapier offers free MCP tool calls until Jan. 5",
+    "group": "Topic · MCP",
+    "points": 30,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 25,
+    "urgency": 0,
+    "quadrant": "FYI"
+   },
+   "tags": [
+    "MCP",
+    "Free & learning"
+   ]
+  },
+  {
+   "item": {
+    "title": "A lock-free queue in Rust",
+    "group": "HN · Front page",
+    "points": 200,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 0,
+    "urgency": 0,
+    "quadrant": "FYI"
+   },
+   "tags": []
+  },
+  {
+   "item": {
+    "title": "",
+    "group": "HN · Show HN",
+    "points": null,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 0,
+    "urgency": 0,
+    "quadrant": "FYI"
+   },
+   "tags": []
+  },
+  {
+   "item": {
+    "title": "Ünïcödé agents 🚀 benchmark",
+    "group": "Research",
+    "points": 3,
+    "published": "2020-01-01T00:00:00+00:00",
+    "also_in": []
+   },
+   "expected": {
+    "importance": 36,
+    "urgency": 0,
+    "quadrant": "FYI"
+   },
+   "tags": [
+    "Evals",
+    "AI agents"
+   ]
+  }
+ ]
+}

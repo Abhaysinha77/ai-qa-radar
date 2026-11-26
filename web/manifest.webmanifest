@@ -1,0 +1,15 @@
+{
+  "name": "AI + QA Radar",
+  "short_name": "AI+QA",
+  "description": "Hot AI and QA news ranked by urgency and importance, without repeats.",
+  "start_url": "./#hot",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml"},
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
