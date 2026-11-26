@@ -287,5 +287,5 @@ def test_empty_scraped_hn_page_is_reported_as_failed():
 def test_telegram_message_lists_headlines():
     msg = format_message({"new_today": 3, "failures": ["x"], "headlines": ["A", "B", "C"]},
                          "https://me.github.io/ai-qa-digest/")
-    assert msg.splitlines()[0] == "AI + QA Radar: 3 new today"
+    assert msg.splitlines()[0] == "Kairoq: 3 new today"
     assert "• A" in msg and "source(s) failed" in msg and msg.endswith("/ai-qa-digest/")

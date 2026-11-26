@@ -124,7 +124,7 @@ class Radar:
 
 def make_handler(radar: Radar):
     class Handler(BaseHTTPRequestHandler):
-        server_version = "Radar/1.0"
+        server_version = "Kairoq/1.0"
         sys_version = ""
 
         def log_message(self, fmt, *args):  # quieter logs
@@ -204,7 +204,7 @@ def serve(settings: Settings | None = None) -> None:
     stop = threading.Event()
     threading.Thread(target=radar.schedule_forever, args=(stop,), daemon=True).start()
     httpd = ThreadingHTTPServer(("0.0.0.0", s.port), make_handler(radar))
-    log.info("AI + QA Radar on http://localhost:%s", s.port)
+    log.info("Kairoq on http://localhost:%s", s.port)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

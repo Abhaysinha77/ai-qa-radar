@@ -1,6 +1,6 @@
 // Offline support: app shell from cache, data.json network-first (falls back to last copy).
-const CACHE = "radar-v6";
-const SHELL = ["./", "index.html", "app.css", "app.js", "manifest.webmanifest", "icon.svg", "icon-192.png"];
+const CACHE = "kairoq-v7";
+const SHELL = ["./", "index.html", "app.css?v=7", "app.js?v=7", "manifest.webmanifest", "icon.svg", "icon-192.png"];
 const OPTIONAL = ["fonts/geist.woff2", "fonts/geist-mono.woff2"];
 
 self.addEventListener("install", (e) => {

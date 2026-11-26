@@ -1,4 +1,4 @@
-# Making changes to AI + QA Radar
+# Making changes to Kairoq
 
 ## The easiest way: ask Claude
 Open Claude (Cowork), give it access to this folder, and describe the change in plain words

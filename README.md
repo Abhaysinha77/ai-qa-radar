@@ -1,4 +1,6 @@
-# AI + QA Radar
+# Kairoq
+
+*Kairoq* (KAI-rock) = **kairos**, Greek for "the right moment", + **Q** for quality. The AI & QA news that matters, at the moment it matters.
 
 A free, full-stack web app for your phone: what's new in **Python, pytest, Selenium,
 Playwright, AI agents, MCP, RAG, evals, OpenAI and Anthropic**, ranked by how **urgent** and

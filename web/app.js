@@ -1,4 +1,4 @@
-/* AI + QA Radar — client app.
+/* Kairoq — client app.
  * 1. shows the last data instantly (from this device), 2. loads fresh data.json,
  * 3. pulls live Hacker News straight from your phone, scoring it with the same rules
  *    the Python collector uses (exported in data.json). Works on GitHub Pages or the server. */
@@ -670,17 +670,20 @@ view.addEventListener("change", async (e) => {
     (d.read || []).forEach((k) => prefs.read.add(k)); Object.assign(prefs.saved, d.saved || {}); (d.muted || []).forEach((t) => prefs.muted.add(t));
     Object.assign(prefs.progress, d.progress || {});
     savePrefs(); render();
-  } catch { alert("That file is not a Radar export."); }
+  } catch { alert("That file is not a Kairoq export."); }
 });
 let searchTimer;
 $("#search").addEventListener("input", (e) => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => { query = e.target.value.trim().toLowerCase(); render(); }, 150);
 });
+// GitHub Pages / Cloudflare Pages are static: there is no /api there, so don't call it
+// (it only produced a red 405 in the console). The Python server has the API.
+const STATIC_HOST = /\.github\.io$|\.pages\.dev$/i.test((typeof location !== "undefined" && location.hostname) || "");
 $("#refresh").addEventListener("click", async () => {
-  // With the backend server this starts a full refresh of every source; on GitHub Pages
-  // there is no API (404/405) and the button just reloads data + live Hacker News.
-  try {
+  // With the backend server this starts a full refresh of every source; on static hosting
+  // the button reloads data.json + live Hacker News.
+  if (!STATIC_HOST) try {
     const res = await fetch("api/refresh", { method: "POST" });
     if (res.status === 202) setTimeout(() => loadData().then(loadLive), 25000);
   } catch { /* static hosting or offline */ }
@@ -707,7 +710,16 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && data && Date.now() - new Date(data.generated).getTime() > 5 * 60000) loadData().then(loadLive);
 });
 window.addEventListener("pagehide", () => store.set("lastVisit", new Date().toISOString()));
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+// Service worker: always check for a new version, and when a new one takes over, reload once
+// so a phone/browser never keeps running an old app.js with a new page (mixed old/new layout).
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then((reg) => reg.update && reg.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener && navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hadController && !reloaded) { reloaded = true; location.reload(); }
+  });
+}
 
 // ---------------------------------------------------------------- start
 applyTheme();

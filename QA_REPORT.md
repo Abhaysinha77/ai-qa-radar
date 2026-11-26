@@ -1,4 +1,4 @@
-# QA Report — AI + QA Radar
+# QA Report — Kairoq
 
 **Date:** 2026-11-26 · **Build under test:** current `main` (collector + web app) · **Verdict:** ✅ Ready to deploy, with the residual risks listed at the end.
 

@@ -1,6 +1,6 @@
 {
-  "name": "AI + QA Radar",
-  "short_name": "AI+QA",
+  "name": "Kairoq — AI & QA signal",
+  "short_name": "Kairoq",
   "description": "Hot AI and QA news ranked by urgency and importance, without repeats.",
   "start_url": "./#hot",
   "scope": "./",

@@ -254,7 +254,7 @@ def test_telegram_only_sends_in_configured_half_hour(monkeypatch=None):
 
 def test_telegram_message_without_page_url_or_headlines():
     msg = format_message({"new_today": 0}, "")
-    assert msg == "AI + QA Radar: 0 new today"
+    assert msg == "Kairoq: 0 new today"
 
 
 # ================================================================== config

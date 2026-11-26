@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish AI + QA Radar to YOUR PERSONAL GitHub and make it live for free — safely, even when
+# Publish Kairoq to YOUR PERSONAL GitHub and make it live for free — safely, even when
 # your company account is the one logged in to the GitHub CLI.
 #
 #   ./publish.sh --user <personal-username>                    public repo + GitHub Pages
@@ -130,7 +130,7 @@ if $PRIVATE; then
     .github/workflows/daily.yml
 fi
 git add -A
-git diff --cached --quiet || git commit -qm "AI + QA Radar"
+git diff --cached --quiet || git commit -qm "Kairoq"
 git branch -M main
 if git log --format='%ae' | grep -qv "users.noreply.github.com"; then
   fail "Some earlier commits in this folder use another email. Delete the hidden .git folder here and run again."
@@ -142,7 +142,7 @@ VIS="--public"; $PRIVATE && VIS="--private"
 say "5/7  Creating github.com/$PERSONAL/$NAME (${VIS#--}) and pushing"
 if ! gh repo view "$PERSONAL/$NAME" >/dev/null 2>&1; then
   gh repo create "$PERSONAL/$NAME" "$VIS" \
-    --description "AI + QA Radar: hot AI & QA news ranked by urgency and importance, free courses, no repeats" >/dev/null
+    --description "Kairoq: hot AI & QA news ranked by urgency and importance, free courses, no repeats" >/dev/null
 fi
 git remote remove origin >/dev/null 2>&1 || true
 git remote add origin "https://github.com/$PERSONAL/$NAME.git"

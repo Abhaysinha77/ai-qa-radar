@@ -11,7 +11,7 @@ import requests
 
 
 def format_message(summary: dict, page_url: str, limit: int = 8) -> str:
-    lines = [f"AI + QA Radar: {summary['new_today']} new today"]
+    lines = [f"Kairoq: {summary['new_today']} new today"]
     if summary.get("failures"):
         lines.append(f"⚠ {len(summary['failures'])} source(s) failed")
     lines += [f"• {title}" for title in summary.get("headlines", [])[:limit]]

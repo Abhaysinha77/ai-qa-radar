@@ -57,7 +57,7 @@ def test_serves_app_with_correct_types_and_security_headers(tmp_path):
     base, radar, _, httpd = start(tmp_path)
     try:
         code, h, body = req(base + "/")
-        assert code == 200 and b"AI + QA Radar" in body and h["Content-Type"].startswith("text/html")
+        assert code == 200 and b"Kairoq" in body and h["Content-Type"].startswith("text/html")
         assert "default-src 'self'" in h["Content-Security-Policy"] and h["X-Content-Type-Options"] == "nosniff"
         assert req(base + "/app.js")[1]["Content-Type"].startswith("text/javascript")
         assert req(base + "/manifest.webmanifest")[1]["Content-Type"].startswith("application/manifest+json")
