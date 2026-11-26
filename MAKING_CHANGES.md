@@ -50,3 +50,9 @@ test stops the deploy, so the live app never breaks.
 ./publish.sh --user Abhaysinha77
 ```
 Live about 3 minutes later. Undo a bad change: `git checkout -- <file>` before publishing, or ask Claude.
+
+## After changing app.css or app.js
+
+Bump the version number so phones and browsers load the new files instead of an old saved copy:
+in `web/index.html` change `app.css?v=7` and `app.js?v=7` to `v=8` (and the same two names in `web/sw.js`),
+and change `const CACHE = "kairoq-v7"` in `web/sw.js` to `kairoq-v8`.

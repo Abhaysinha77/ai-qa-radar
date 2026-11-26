@@ -15,12 +15,16 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || url.origin !== location.origin) return; // live HN goes straight to the network
   if (url.pathname.endsWith("data.json")) {
     e.respondWith(fetch(e.request).then((res) => {
-      const copy = res.clone(); caches.open(CACHE).then((c) => c.put("data.json", copy)); return res;
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put("data.json", copy)); }
+      return res;
     }).catch(() => caches.match("data.json")));
     return;
   }
-  // shell: network first so updates show up, cache when offline
+  // shell: network first so updates show up, cache when offline. Only good (200) answers are
+  // cached, and only page navigations fall back to index.html (never serve HTML as CSS/JS).
   e.respondWith(fetch(e.request).then((res) => {
-    const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return res;
-  }).catch(() => caches.match(e.request).then((r) => r || caches.match("index.html"))));
+    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
+    return res;
+  }).catch(() => caches.match(e.request, { ignoreSearch: e.request.mode !== "navigate" })
+    .then((r) => r || (e.request.mode === "navigate" ? caches.match("index.html") : Response.error()))));
 });
